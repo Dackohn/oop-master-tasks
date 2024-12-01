@@ -1,5 +1,5 @@
-#ifndef STATS_H
-#define STATS_H
+#ifndef STATISTICS_H
+#define STATISTICS_H
 
 #include <iostream>
 
@@ -15,6 +15,11 @@ public:
     void incrementGasCars() { gasCars++; }
     void incrementPeopleServed() { peopleServed++; }
     void incrementRobotsServed() { robotsServed++; }
+
+    int electricCarsCount() const { return electricCars; }
+    int gasCarsCount() const { return gasCars; }
+    int peopleServedCount() const { return peopleServed; }
+    int robotsServedCount() const { return robotsServed; }
 
     void printStats() const {
         std::cout << "Electric cars served: " << electricCars << std::endl;
