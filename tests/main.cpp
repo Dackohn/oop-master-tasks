@@ -18,7 +18,7 @@ void testQueues() {
     std::cout << "All queue tests passed!" << std::endl;
 }
 void testSemaphore() {
-    Semaphore semaphore("../src/queue_test", 1, 1);
+    Semaphore semaphore("src/queue_test", 1, 1);
 
     semaphore.addCarStation(std::make_shared<CarStation>(
         createRandomQueue<Car>(), CarType::ELECTRIC, PassengerType::PEOPLE));

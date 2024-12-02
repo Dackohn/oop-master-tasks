@@ -23,11 +23,11 @@ jobs:
 
       # Step 3: Compile the main application
       - name: Compile main application
-        run: g++ -std=c++17 -o CarService src/main.cpp src/Semaphore.cpp src/CarStation.cpp
+        run: g++ -std=c++17 -o CarService src/main.cpp
 
       # Step 4: Compile the tests
       - name: Compile tests
-        run: g++ -std=c++17 -o CarServiceTests tests/main.cpp src/Semaphore.cpp src/CarStation.cpp
+        run: g++ -std=c++17 -o CarServiceTests tests/main.cpp
 
       # Step 5: Run the tests
       - name: Run tests
