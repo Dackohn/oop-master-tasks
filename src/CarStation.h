@@ -29,7 +29,6 @@ public:
 
         if (car.needsDinner()) {
             if (car.getPassengers() == PassengerType::PEOPLE) {
-                std::cout<<car.getId()<<std::endl;
                 diningService->serveDinner(car.getId());
                 stats->incrementPeopleServed();
             } else if (car.getPassengers() == PassengerType::ROBOTS) {

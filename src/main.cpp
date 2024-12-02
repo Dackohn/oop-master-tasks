@@ -1,30 +1,61 @@
+#include "Semaphore.h"
+#include "LinkedListQueue.h"
 #include "PeopleDinner.h"
 #include "RobotDinner.h"
 #include "ElectricStation.h"
 #include "GasStation.h"
 #include "utils/Statistics.h"
+#include <dirent.h>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
-int main() {
-    Statistics stats;
-
+void testSemaphore(const std::string& folderPath) {
+    Statistics electricStats, gasStats;
     PeopleDinner peopleDinner;
     RobotDinner robotDinner;
-    ElectricStation electricStation;
-    GasStation gasStation;
+    ElectricStation electricRefuel;
+    GasStation gasRefuel;
 
-    peopleDinner.serveDinner("1");
-    stats.incrementPeopleServed();
+    LinkedListQueue<Car> electricQueue, gasQueue;
+    CarStation electricStation(&peopleDinner, &electricRefuel, &electricQueue, &electricStats);
+    CarStation gasStation(&robotDinner, &gasRefuel, &gasQueue, &gasStats);
 
-    robotDinner.serveDinner("2");
-    stats.incrementRobotsServed();
+    Semaphore semaphore(&electricStation, &gasStation);
 
-    electricStation.refuel("3");
-    stats.incrementElectricCars();
+    DIR* dir = opendir(folderPath.c_str());
+    if (!dir) {
+        std::cerr << "Failed to open directory: " << folderPath << std::endl;
+        return;
+    }
 
-    gasStation.refuel("4");
-    stats.incrementGasCars();
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string fileName = entry->d_name;
 
-    stats.printStats();
+        if (fileName.size() > 5 && fileName.substr(fileName.size() - 5) == ".json") {
+            std::ifstream inputFile(folderPath + "/" + fileName);
+            if (!inputFile.is_open()) {
+                std::cerr << "Failed to open file: " << fileName << std::endl;
+                continue;
+            }
 
+            std::string jsonString((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
+            semaphore.processJson(jsonString);
+        }
+    }
+
+    closedir(dir);
+
+    semaphore.serveCars();
+
+
+    std::cout << "Test Passed!" << std::endl;
+}
+
+int main() {
+    std::string folderPath = "queue";
+    testSemaphore(folderPath);
     return 0;
 }
