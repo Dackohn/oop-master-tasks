@@ -10,8 +10,8 @@ void testDineable() {
 
     std::cout << "Running tests..." << std::endl;
 
-    peopleDinner.serveDinner("TestCar1");
-    robotDinner.serveDinner("TestCar2");
+    peopleDinner.serveDinner(1);
+    robotDinner.serveDinner(2);
 
 
     std::cout << "Tests completed!" << std::endl;

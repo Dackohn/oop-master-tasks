@@ -6,7 +6,7 @@
 
 class GasStation : public Refuelable {
 public:
-    void refuel(const std::string& carId) override {
+    void refuel(const int& carId) override {
         std::cout << "Refueling gas car " << carId << "." << std::endl;
     }
 };

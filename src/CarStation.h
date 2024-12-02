@@ -1,52 +1,67 @@
-#ifndef CAR_STATION_H
-#define CAR_STATION_H
+#ifndef CARSTATION_H
+#define CARSTATION_H
 
-#include "interfaces/Dineable.h"
-#include "interfaces/Refuelable.h"
-#include "utils/Statistics.h"
-#include "interfaces/Queue.h"
+#include "CircularQueue.h"
 #include "Car.h"
+#include "utils/Statistics.h"
 #include <iostream>
 
 class CarStation {
 private:
-    Dineable* diningService;
-    Refuelable* refuelingService;
-    Queue<Car>* queue;
+    CircularQueue<Car>* carQueue;
     Statistics* stats;
 
 public:
-    CarStation(Dineable* dineService, Refuelable* refuelService, Queue<Car>* carQueue, Statistics* statistics)
-        : diningService(dineService), refuelingService(refuelService), queue(carQueue), stats(statistics) {}
+    CarStation(CircularQueue<Car>* queue, Statistics* statistics)
+        : carQueue(queue), stats(statistics) {}
 
     void addCar(const Car& car) {
-        queue->enqueue(car);
+        carQueue->enqueue(car);
+        std::cout << "[INFO] Added car ID: " << car.getId()
+                  << " to " << (car.getType() == CarType::ELECTRIC ? "electric" : "gas") << " queue." << std::endl;
     }
 
-    void serveCars() {
-    while (!queue->isEmpty()) {
-        Car car = queue->dequeue();
-
-        if (car.needsDinner()) {
-            if (car.getPassengers() == PassengerType::PEOPLE) {
-                diningService->serveDinner(car.getId());
-                stats->incrementPeopleServed();
-            } else if (car.getPassengers() == PassengerType::ROBOTS) {
-                diningService->serveDinner(car.getId());
-                stats->incrementRobotsServed();
-            }
+    void serveCar() {
+        if (carQueue->isEmpty()) {
+            std::cout << "[INFO] No cars to serve in this station." << std::endl;
+            return;
         }
+
+        Car car = carQueue->dequeue();
 
         if (car.getType() == CarType::ELECTRIC) {
-            refuelingService->refuel(car.getId());
             stats->incrementElectricCars();
-        } else if (car.getType() == CarType::GAS) {
-            refuelingService->refuel(car.getId());
+            stats->addElectricConsumption(car.getConsumption());
+        } else {
             stats->incrementGasCars();
+            stats->addGasConsumption(car.getConsumption());
         }
-    }
-}
 
+        if (car.getPassengers() == PassengerType::PEOPLE) {
+            stats->incrementPeopleServed();
+        } else {
+            stats->incrementRobotsServed();
+        }
+
+        if (car.needsDinner()) {
+            stats->incrementDiningCars();
+        } else {
+            stats->incrementNotDiningCars();
+        }
+
+        std::cout << "[INFO] Served car ID: " << car.getId()
+                  << " from " << (car.getType() == CarType::ELECTRIC ? "electric" : "gas") << " queue."
+                  << " Passengers: " << (car.getPassengers() == PassengerType::PEOPLE ? "People" : "Robots")
+                  << (car.needsDinner() ? " with dinner." : " without dinner.") << std::endl;
+    }
+
+    CircularQueue<Car>* getQueue() const {
+        return carQueue;
+    }
+
+    Statistics& getStatistics() const {
+        return *stats;
+    }
 };
 
 #endif

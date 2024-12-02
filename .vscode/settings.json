@@ -1,5 +1,5 @@
 {
-    "C_Cpp.default.compilerPath": "C:\\MinGW\\bin\\g++.exe",
+    "C_Cpp.default.compilerPath": "D:\\msys2\\mingw64\\bin\\g++.exe",
     "files.associations": {
         "string": "cpp",
         "cassert": "cpp",
@@ -53,6 +53,22 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "typeinfo": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "bit": "cpp",
+        "charconv": "cpp",
+        "codecvt": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "condition_variable": "cpp",
+        "optional": "cpp",
+        "format": "cpp",
+        "mutex": "cpp",
+        "numbers": "cpp",
+        "ranges": "cpp",
+        "semaphore": "cpp",
+        "span": "cpp",
+        "stop_token": "cpp",
+        "text_encoding": "cpp",
+        "variant": "cpp"
     }
 }

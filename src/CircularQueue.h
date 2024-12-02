@@ -1,5 +1,6 @@
 #include "interfaces/Queue.h"
 #include <vector>
+#include <stdexcept>
 
 template <typename T>
 class CircularQueue : public Queue<T> {
@@ -9,13 +10,20 @@ private:
     size_t count;
 
 public:
-    explicit CircularQueue(size_t cap) : data(cap), head(0), tail(0), capacity(cap), count(0) {}
+    explicit CircularQueue(size_t cap = 100)
+        : head(0), tail(0), capacity(cap), count(0) {
+        data.reserve(cap); 
+    }
 
     void enqueue(const T& item) override {
         if (count == capacity) {
             throw std::overflow_error("Queue is full");
         }
-        data[tail] = item;
+        if (data.size() < capacity) {
+            data.push_back(item);
+        } else {
+            data[tail] = item;
+        }
         tail = (tail + 1) % capacity;
         count++;
     }

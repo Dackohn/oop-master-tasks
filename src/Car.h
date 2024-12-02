@@ -8,19 +8,24 @@ enum class PassengerType { PEOPLE, ROBOTS };
 
 class Car {
 private:
-    std::string id;
+    int id;
     CarType type;
     PassengerType passengers;
     bool wantsDinner;
+    int consumption;
 
 public:
-    Car(const std::string& carId, CarType carType, PassengerType passengerType, bool dinnerPreference)
-        : id(carId), type(carType), passengers(passengerType), wantsDinner(dinnerPreference) {}
+    Car()
+        : id(0), type(CarType::ELECTRIC), passengers(PassengerType::PEOPLE), wantsDinner(false), consumption(0) {}
 
-    std::string getId() const { return id; }
+    Car(const int& carId, CarType carType, PassengerType passengerType, bool dinnerPreference, int consumptionValue)
+        : id(carId), type(carType), passengers(passengerType), wantsDinner(dinnerPreference), consumption(consumptionValue) {}
+
+    int getId() const { return id; }
     CarType getType() const { return type; }
     PassengerType getPassengers() const { return passengers; }
     bool needsDinner() const { return wantsDinner; }
+    int getConsumption() const { return consumption; }
 };
 
 #endif

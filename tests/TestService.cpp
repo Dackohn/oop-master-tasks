@@ -22,11 +22,11 @@ void testFullService() {
 
     CarStation station(&peopleDinner, &electricStation, &queue, &stats);
 
-    station.addCar(Car("1", CarType::ELECTRIC, PassengerType::PEOPLE, true));
-    station.addCar(Car("2", CarType::GAS, PassengerType::ROBOTS, true));
-    station.addCar(Car("3", CarType::ELECTRIC, PassengerType::PEOPLE, false));
+    station.addCar(Car(1, CarType::ELECTRIC, PassengerType::PEOPLE, true, 50));
+    station.addCar(Car(2, CarType::GAS, PassengerType::ROBOTS, true, 40));
+    station.addCar(Car(3, CarType::ELECTRIC, PassengerType::PEOPLE, false, 20));
 
-    station.serveCars();
+    station.serveCar();
 
     customAssert(stats.electricCarsCount() == 2, "Incorrect number of electric cars served.");
     customAssert(stats.gasCarsCount() == 1, "Incorrect number of gas cars served.");
@@ -44,10 +44,10 @@ void testPartialService() {
 
     CarStation station(&peopleDinner, &gasStation, &queue, &stats);
 
-    station.addCar(Car("1", CarType::GAS, PassengerType::PEOPLE, false));
-    station.addCar(Car("2", CarType::GAS, PassengerType::ROBOTS, true));
+    station.addCar(Car(1, CarType::GAS, PassengerType::PEOPLE, false, 26));
+    station.addCar(Car(2, CarType::GAS, PassengerType::ROBOTS, true, 35));
 
-    station.serveCars();
+    station.serveCar();
 
     customAssert(stats.electricCarsCount() == 0, "Electric cars were incorrectly counted.");
     customAssert(stats.gasCarsCount() == 2, "Incorrect number of gas cars served.");
@@ -65,7 +65,7 @@ void testNoCars() {
 
     CarStation station(&peopleDinner, &gasStation, &queue, &stats);
 
-    station.serveCars();
+    station.serveCar();
 
     customAssert(stats.electricCarsCount() == 0, "Electric cars incorrectly counted when none were served.");
     customAssert(stats.gasCarsCount() == 0, "Gas cars incorrectly counted when none were served.");

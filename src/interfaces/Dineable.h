@@ -5,7 +5,7 @@
 
 class Dineable {
 public:
-    virtual void serveDinner(const std::string& carId) = 0;
+    virtual void serveDinner(const int& carId) = 0;
     virtual ~Dineable() = default;
 };
 

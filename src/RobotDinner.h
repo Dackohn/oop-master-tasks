@@ -6,7 +6,7 @@
 
 class RobotDinner : public Dineable {
 public:
-    void serveDinner(const std::string& carId) override {
+    void serveDinner(const int& carId) override {
         std::cout << "Serving dinner to robots in car " << carId << "." << std::endl;
     }
 };
