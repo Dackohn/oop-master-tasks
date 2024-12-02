@@ -26,7 +26,6 @@ public:
     void incrementDiningCars() { diningCars++; }
     void incrementNotDiningCars() { notDiningCars++; }
 
-    // Getter methods
     int electricCarsCount() const { return electricCars; }
     int gasCarsCount() const { return gasCars; }
     int peopleServedCount() const { return peopleServed; }

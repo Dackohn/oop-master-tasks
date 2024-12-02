@@ -1,8 +1,8 @@
 #include "MainApplication.h"
 int main() {
     std::string folderPath = "queue";
-    int readInterval = 1;
-    int serveInterval = 1.5;
+    int readInterval = 2;
+    int serveInterval = 3;
 
     MainApplication app(folderPath, readInterval, serveInterval);
     app.start();

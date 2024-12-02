@@ -90,7 +90,7 @@ private:
         DIR* dir = opendir(folderPath.c_str());
         if (!dir) {
             std::cerr << "[ERROR] Failed to open directory: " << folderPath << std::endl;
-            stopProcessing = true;
+stopProcessing = true;
             carAvailable.notify_all();
             return;
         }
