@@ -2,6 +2,11 @@
 #define SEMAPHORE_H
 
 #include "CarStation.h"
+#include "ElectricStation.h"
+#include "GasStation.h"
+#include "PeopleDinner.h"
+#include "RobotDinner.h"
+#include "utils/Statistics.h"
 #include <string>
 #include <thread>
 #include <mutex>
@@ -14,8 +19,7 @@ using json = nlohmann::json;
 
 class Semaphore {
 private:
-    CarStation* electricCarStation;
-    CarStation* gasCarStation;
+    std::vector<std::shared_ptr<CarStation>> carStations;
     std::string folderPath;
     int readInterval;
     int serveInterval;
@@ -24,6 +28,8 @@ private:
     std::condition_variable carAvailable;
     bool carsInQueue = false;
     bool stopProcessing = false;
+
+    Statistics stats;
 
     void processFile(const std::string& filePath, const std::string& fileName) {
         std::ifstream inputFile(filePath);
@@ -43,10 +49,31 @@ private:
             carJson["consumption"].get<int>()
         );
 
-        if (car.getType() == CarType::ELECTRIC) {
-            electricCarStation->addCar(car);
-        } else {
-            gasCarStation->addCar(car);
+        for (const auto& station : carStations) {
+            if (station->getStationType() == car.getType() &&
+                station->getDiningType() == car.getPassengers()) {
+                station->addCar(car);
+
+                if (car.getType() == CarType::ELECTRIC) {
+                    stats.incrementElectricCars();
+                } else if (car.getType() == CarType::GAS) {
+                    stats.incrementGasCars();
+                }
+
+                if (car.getPassengers() == PassengerType::PEOPLE) {
+                    stats.incrementPeopleServed();
+                } else if (car.getPassengers() == PassengerType::ROBOTS) {
+                    stats.incrementRobotsServed();
+                }
+
+                if (car.needsDinner()) {
+                    stats.incrementDiningCars();
+                } else {
+                    stats.incrementNotDiningCars();
+                }
+
+                break;
+            }
         }
 
         {
@@ -63,31 +90,23 @@ private:
         DIR* dir = opendir(folderPath.c_str());
         if (!dir) {
             std::cerr << "[ERROR] Failed to open directory: " << folderPath << std::endl;
-            stopProcessing = true; 
+            stopProcessing = true;
             carAvailable.notify_all();
             return;
         }
 
         struct dirent* entry;
-        int totalFiles = 0;
         while ((entry = readdir(dir)) != nullptr) {
             std::string fileName = entry->d_name;
 
             if (fileName.size() > 5 && fileName.substr(fileName.size() - 5) == ".json") {
                 std::string filePath = folderPath + "/" + fileName;
                 processFile(filePath, fileName);
-                totalFiles++;
                 std::this_thread::sleep_for(std::chrono::seconds(readInterval));
             }
         }
 
         closedir(dir);
-
-        if (totalFiles == 0) {
-            std::cout << "[INFO] No files to process." << std::endl;
-        }
-
-        std::cout << "[INFO] Completed reading all files dynamically." << std::endl;
         stopProcessing = true;
         carAvailable.notify_all();
     }
@@ -96,31 +115,60 @@ private:
         while (true) {
             std::unique_lock<std::mutex> lock(carQueueMutex);
 
-            carAvailable.wait(lock, [this] { 
-                return carsInQueue || stopProcessing; 
-            });
+            carAvailable.wait(lock, [this] { return carsInQueue || stopProcessing; });
 
-            if (stopProcessing && electricCarStation->getQueue()->isEmpty() && gasCarStation->getQueue()->isEmpty()) {
-                std::cout << "[INFO] All cars served. Exiting serveTask." << std::endl;
+            if (stopProcessing && !hasCarsInQueue()) {
                 break;
             }
 
-            if (!electricCarStation->getQueue()->isEmpty()) {
-                electricCarStation->serveCar();
-            } else if (!gasCarStation->getQueue()->isEmpty()) {
-                gasCarStation->serveCar();
+            for (const auto& station : carStations) {
+                if (!station->getQueue()->isEmpty()) {
+                    Car servedCar = station->serveCar();
+
+                    if (servedCar.getId() != -1) {
+
+                        if (servedCar.getType() == CarType::ELECTRIC) {
+                            ElectricStation().refuel(servedCar.getId());
+                            stats.addElectricConsumption(servedCar.getConsumption());
+                        } else if (servedCar.getType() == CarType::GAS) {
+                            GasStation().refuel(servedCar.getId());
+                            stats.addGasConsumption(servedCar.getConsumption());
+                        }
+
+                        if (servedCar.needsDinner()) {
+                            if (servedCar.getPassengers() == PassengerType::PEOPLE) {
+                                PeopleDinner().serveDinner(servedCar.getId());
+                            } else {
+                                RobotDinner().serveDinner(servedCar.getId());
+                            }
+                        }
+                    }
+                }
             }
 
-            carsInQueue = !electricCarStation->getQueue()->isEmpty() || !gasCarStation->getQueue()->isEmpty();
+            carsInQueue = hasCarsInQueue();
             lock.unlock();
 
             std::this_thread::sleep_for(std::chrono::seconds(serveInterval));
         }
     }
 
+    bool hasCarsInQueue() const {
+        for (const auto& station : carStations) {
+            if (!station->getQueue()->isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 public:
-    Semaphore(CarStation* electricStation, CarStation* gasStation, const std::string& folder, int readInt, int serveInt)
-        : electricCarStation(electricStation), gasCarStation(gasStation), folderPath(folder), readInterval(readInt), serveInterval(serveInt) {}
+    Semaphore(const std::string& folder, int readInt, int serveInt)
+        : folderPath(folder), readInterval(readInt), serveInterval(serveInt) {}
+
+    void addCarStation(std::shared_ptr<CarStation> station) {
+        carStations.push_back(station);
+    }
 
     void start() {
         std::thread readerThread(&Semaphore::readTask, this);
@@ -128,24 +176,11 @@ public:
 
         readerThread.join();
         serveThread.join();
+        printStatistics();
     }
 
     void printStatistics() const {
-        const Statistics& electricStats = electricCarStation->getStatistics();
-        const Statistics& gasStats = gasCarStation->getStatistics();
-
-        std::cout << "{"
-                  << "\"ELECTRIC\": " << electricStats.electricCarsCount() << ", "
-                  << "\"GAS\": " << gasStats.gasCarsCount() << ", "
-                  << "\"PEOPLE\": " << electricStats.peopleServedCount() + gasStats.peopleServedCount() << ", "
-                  << "\"ROBOTS\": " << electricStats.robotsServedCount() + gasStats.robotsServedCount() << ", "
-                  << "\"DINING\": " << electricStats.diningCarsCount() + gasStats.diningCarsCount() << ", "
-                  << "\"NOT_DINING\": " << electricStats.notDiningCarsCount() + gasStats.notDiningCarsCount() << ", "
-                  << "\"CONSUMPTION\": {"
-                  << "\"ELECTRIC\": " << electricStats.electricConsumption() << ", "
-                  << "\"GAS\": " << gasStats.gasConsumption()
-                  << "}"
-                  << "}" << std::endl;
+        stats.printStats();
     }
 };
 
